@@ -1,0 +1,2206 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>TRACKER — дела · бюджет · тренировки</title>
+  <style>
+:root{
+  --bg:#0b0b0c;
+  --line: rgba(255,255,255,.10);
+  --text: rgba(255,255,255,.92);
+  --muted: rgba(255,255,255,.55);
+  --danger: rgba(255,70,70,.90);
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+          "Segoe UI", Roboto, Inter, Arial, "Noto Sans", sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:var(--sans);
+  background: radial-gradient(900px 500px at 20% 0%, rgba(255,255,255,.05), transparent 55%),
+              radial-gradient(900px 500px at 90% 20%, rgba(255,255,255,.04), transparent 55%),
+              var(--bg);
+  color:var(--text);
+}
+
+.topbar{
+  position:sticky; top:0; z-index:10;
+  display:flex; justify-content:space-between; align-items:center;
+  gap:12px;
+  padding:14px 14px;
+  border-bottom:1px solid var(--line);
+  background: rgba(0,0,0,.40);
+  backdrop-filter: blur(14px);
+}
+.brand{display:flex; align-items:center; gap:10px}
+.logo{
+  width:30px;height:30px;border-radius:12px;
+  background: linear-gradient(180deg, rgba(255,255,255,.20), rgba(255,255,255,.05));
+  border:1px solid var(--line);
+}
+.title{
+  font-family:var(--mono);
+  letter-spacing:.26em;
+  font-size:12px;
+}
+.subtitle{
+  margin-top:2px;
+  font-family:var(--mono);
+  color:var(--muted);
+  font-size:11px;
+  letter-spacing:.10em;
+  text-transform: uppercase;
+}
+
+.top-actions{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end}
+
+.shell{padding:14px; padding-bottom:86px; max-width:900px; margin:0 auto;}
+.card{
+  display:none;
+  border:1px solid var(--line);
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+  border-radius:18px;
+  padding:14px;
+  box-shadow: 0 10px 40px rgba(0,0,0,.55);
+  backdrop-filter: blur(14px);
+}
+.card.active{display:block}
+
+.head{
+  display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+  margin-bottom:10px
+}
+.head-left{display:flex; flex-direction:column; gap:2px}
+.head-right{display:flex; align-items:flex-start}
+h2{margin:0; font-size:18px}
+.hint{font-family:var(--mono); font-size:11px; color:var(--muted)}
+
+.row{display:flex; gap:10px; margin: 10px 0; align-items:center}
+.input{
+  flex:1;
+  height:42px;
+  padding:10px 12px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.35);
+  color: var(--text);
+  outline:none;
+}
+.input.date{flex:0 0 150px}
+.input::placeholder{color: rgba(255,255,255,.35)}
+.input:focus{
+  border-color: rgba(255,255,255,.28);
+  box-shadow: 0 0 0 4px rgba(255,255,255,.06);
+}
+
+.btn{
+  height:42px;
+  padding:0 14px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.10);
+  color:var(--text);
+  cursor:pointer;
+  font-family:var(--mono);
+}
+.btn:hover{background: rgba(255,255,255,.14)}
+.btn.ghost{background: rgba(0,0,0,.25)}
+.btn.danger{
+  background: rgba(255,70,70,.12);
+  border-color: rgba(255,70,70,.25);
+}
+.btn.danger:hover{background: rgba(255,70,70,.18)}
+
+.list{margin-top:12px; display:flex; flex-direction:column; gap:10px}
+.item{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:12px;
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.30);
+}
+.item-text{
+  flex:1;
+  min-width:0;
+  word-wrap: break-word;
+  line-height:1.25;
+}
+.item-meta{
+  margin-top:6px;
+  font-family:var(--mono);
+  font-size:11px;
+  color: var(--muted);
+  letter-spacing:.02em;
+}
+.item-actions{display:flex; gap:8px; align-items:center}
+.icon-btn{
+  width:40px; height:40px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.08);
+  color:var(--text);
+  cursor:pointer;
+  font-family:var(--mono);
+}
+.icon-btn:hover{background: rgba(255,255,255,.12)}
+.icon-btn.done{background: rgba(255,255,255,.12)}
+.icon-btn.del{
+  background: rgba(255,70,70,.10);
+  border-color: rgba(255,70,70,.22);
+}
+.icon-btn.del:hover{background: rgba(255,70,70,.16)}
+
+/* Week calendar */
+.calendar{
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.26);
+  border-radius:16px;
+  padding:10px;
+  margin: 6px 0 10px;
+}
+.cal-nav{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:8px;
+}
+.nav-btn{
+  width:38px;
+  height:34px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.08);
+  color: rgba(255,255,255,.85);
+  cursor:pointer;
+  font-family:var(--mono);
+  font-size:16px;
+  line-height:1;
+}
+.nav-btn:hover{background: rgba(255,255,255,.12)}
+.nav-btn:disabled{
+  opacity:.35;
+  cursor:not-allowed;
+}
+.cal-range{
+  flex:1;
+  text-align:center;
+  font-family:var(--mono);
+  font-size:11px;
+  color: rgba(255,255,255,.70);
+  letter-spacing:.06em;
+  text-transform: uppercase;
+}
+
+.cal-row{
+  display:flex;
+  gap:8px;
+  overflow:auto;
+  padding-bottom:6px;
+  scrollbar-width: none;
+}
+.cal-row::-webkit-scrollbar{display:none}
+.day{
+  flex:0 0 auto;
+  min-width: 70px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  padding:10px 10px;
+  cursor:pointer;
+  text-align:left;
+}
+.day:hover{background: rgba(255,255,255,.10)}
+.day.active{
+  background: rgba(255,255,255,.12);
+  border-color: rgba(255,255,255,.18);
+}
+.day-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  gap:10px;
+  font-family:var(--mono);
+  letter-spacing:.06em;
+  font-size:11px;
+  color: rgba(255,255,255,.75);
+  text-transform: uppercase;
+}
+.day-num{
+  margin-top:6px;
+  font-family:var(--mono);
+  font-size:18px;
+  color: rgba(255,255,255,.92);
+}
+.badge{
+  padding:2px 6px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  font-family:var(--mono);
+  font-size:11px;
+  color: rgba(255,255,255,.80);
+}
+.badge-strong{
+  background: rgba(255,255,255,.12);
+  border-color: rgba(255,255,255,.18);
+  color: rgba(255,255,255,.92);
+}
+.cal-sub{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-top:4px;
+}
+.cal-sub-actions{display:flex; gap:8px; align-items:center}
+.cal-label{
+  font-family:var(--mono);
+  font-size:11px;
+  color: var(--muted);
+  letter-spacing:.04em;
+}
+.mini-btn{
+  height:30px;
+  padding:0 10px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.08);
+  color: rgba(255,255,255,.80);
+  cursor:pointer;
+  font-family:var(--mono);
+  font-size:12px;
+}
+.mini-btn:hover{background: rgba(255,255,255,.12)}
+
+.archive{display:none}
+.archive.show{display:flex}
+.archive-toggle{
+  margin-top:12px;
+  background:none;
+  border:0;
+  color: rgba(255,255,255,.55);
+  font-family:var(--mono);
+  cursor:pointer;
+  text-align:left;
+  padding:6px 2px;
+}
+.archive-toggle:hover{color: rgba(255,255,255,.75)}
+
+/* Budget KPI / limit */
+.budget-summary{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:10px;
+  margin: 8px 0 10px;
+}
+.kpi{
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.28);
+  border-radius: 16px;
+  padding: 12px;
+}
+.kpi-label{ color: var(--muted); font-family: var(--mono); font-size: 12px; }
+.kpi-value{ margin-top:6px; font-size: 18px; letter-spacing:.02em; font-family: var(--mono); }
+.budget-limit{ margin: 2px 0 12px; }
+.progress-label{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.progress-bar{height:6px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;width:0%;background:rgba(255,255,255,.9)}
+
+/* Workouts redesign */
+.workout-top{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:10px;
+  margin: 6px 0 10px;
+}
+.workout-top .mode, .workout-top .rhythm{
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.28);
+  border-radius: 16px;
+  padding: 12px;
+}
+.rhythm-text{
+  margin-top:6px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: rgba(255,255,255,.85);
+}
+.timer-pill{
+  height:42px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 12px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  font-family: var(--mono);
+  color: rgba(255,255,255,.85);
+  min-width: 90px;
+}
+.section-title{
+  margin-top:12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.item.planned{
+  opacity:.55;
+  border-style:dashed;
+}
+.item.session{
+  box-shadow: 0 0 0 2px rgba(255,255,255,.15);
+}
+
+
+
+.plan-box{
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.28);
+  border-radius: 16px;
+  padding: 12px;
+  margin: 6px 0 10px;
+}
+.plan-head{display:flex; align-items:flex-start; justify-content:space-between; gap:10px;}
+.plan-title{font-family:var(--mono); letter-spacing:.06em; text-transform:uppercase; font-size:11px; color:rgba(255,255,255,.85)}
+.plan-badge{
+  padding:2px 8px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  font-family:var(--mono);
+  font-size:11px;
+  color: rgba(255,255,255,.80);
+  white-space:nowrap;
+}
+.plan-row{flex-wrap:wrap}
+.plan-row .input{min-width:240px}
+.plan-note{
+  margin-top:10px;
+  padding:10px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  line-height:1.35;
+}
+/* Bottom tabs */
+.tabbar{
+  position:fixed; left:12px; right:12px; bottom:12px;
+  display:flex; gap:10px;
+  padding:10px;
+  border-radius:20px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.45);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 20px rgba(0,0,0,.38);
+}
+.tabbtn{
+  flex:1;
+  padding:12px 10px;
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.70);
+  font-family:var(--mono);
+  cursor:pointer;
+}
+.tabbtn.active{
+  background: rgba(255,255,255,.12);
+  color: rgba(255,255,255,.92);
+  border-color: rgba(255,255,255,.18);
+}
+
+@media (max-width: 520px){
+  .input.date{flex:0 0 132px}
+  .top-actions{gap:6px}
+  .btn{padding:0 12px}
+  .day{min-width:66px}
+  .workout-top{grid-template-columns:1fr}
+}
+
+/* Theme: light */
+:root[data-theme="light"]{
+  --bg:#f4f4f6;
+  --text: rgba(0,0,0,.88);
+  --muted: rgba(0,0,0,.55);
+  --line: rgba(0,0,0,.12);
+  --danger: rgba(220,60,60,.90);
+}
+:root[data-theme="light"] body{
+  background: radial-gradient(900px 500px at 20% 0%, rgba(0,0,0,.05), transparent 55%),
+              radial-gradient(900px 500px at 90% 20%, rgba(0,0,0,.04), transparent 55%),
+              var(--bg);
+}
+:root[data-theme="light"] .topbar{background: rgba(255,255,255,.55)}
+:root[data-theme="light"] .card{
+  background: linear-gradient(180deg, rgba(0,0,0,.04), rgba(0,0,0,.02));
+  box-shadow: 0 10px 40px rgba(0,0,0,.10);
+}
+:root[data-theme="light"] body,
+:root[data-theme="light"] .card,
+:root[data-theme="light"] .item,
+:root[data-theme="light"] .input,
+:root[data-theme="light"] .btn,
+:root[data-theme="light"] .tabbtn,
+:root[data-theme="light"] .badge,
+:root[data-theme="light"] .kpi,
+:root[data-theme="light"] .calendar,
+:root[data-theme="light"] .day,
+:root[data-theme="light"] .timer-pill,
+:root[data-theme="light"] .rhythm-text,
+:root[data-theme="light"] .plan-box,
+:root[data-theme="light"] .plan-note,
+:root[data-theme="light"] .plan-badge,
+:root[data-theme="light"] .plan-title{
+  color: rgba(0,0,0,.88);
+}
+:root[data-theme="light"] .hint,
+:root[data-theme="light"] .subtitle,
+:root[data-theme="light"] .item-meta,
+:root[data-theme="light"] .progress-label,
+:root[data-theme="light"] .cal-label,
+:root[data-theme="light"] .section-title{
+  color: rgba(0,0,0,.55);
+}
+:root[data-theme="light"] .input::placeholder{color: rgba(0,0,0,.45);}
+:root[data-theme="light"] .input{background: rgba(255,255,255,.70); border-color: rgba(0,0,0,.14);}
+:root[data-theme="light"] .btn{background: rgba(0,0,0,.06); border-color: rgba(0,0,0,.14);}
+:root[data-theme="light"] .btn.ghost{background: rgba(255,255,255,.55);}
+:root[data-theme="light"] .item{background: rgba(255,255,255,.65); border-color: rgba(0,0,0,.10);}
+:root[data-theme="light"] .calendar{background: rgba(255,255,255,.55); border-color: rgba(0,0,0,.10);}
+:root[data-theme="light"] .day{background: rgba(0,0,0,.04); border-color: rgba(0,0,0,.10);}
+:root[data-theme="light"] .day.active{background: rgba(0,0,0,.07); border-color: rgba(0,0,0,.14);}
+
+:root[data-theme="light"] .plan-box{background: rgba(255,255,255,.55); border-color: rgba(0,0,0,.10);}
+:root[data-theme="light"] .plan-note{background: rgba(0,0,0,.03); border-color: rgba(0,0,0,.10);}
+:root[data-theme="light"] .plan-badge{background: rgba(0,0,0,.04); border-color: rgba(0,0,0,.10);}
+:root[data-theme="light"] .tabbar{background: rgba(255,255,255,.60); border-color: rgba(0,0,0,.10); box-shadow: 0 8px 20px rgba(0,0,0,.12);}
+:root[data-theme="light"] .tabbtn{background: rgba(0,0,0,.04); border-color: rgba(0,0,0,.10); color: rgba(0,0,0,.65);}
+:root[data-theme="light"] .tabbtn.active{background: rgba(0,0,0,.07); color: rgba(0,0,0,.88); border-color: rgba(0,0,0,.14);}
+:root[data-theme="light"] .icon-btn{background: rgba(0,0,0,.05); border-color: rgba(0,0,0,.12); color: rgba(0,0,0,.85);}
+:root[data-theme="light"] .badge{background: rgba(0,0,0,.05); border-color: rgba(0,0,0,.12); color: rgba(0,0,0,.75);}
+:root[data-theme="light"] .badge-strong{background: rgba(0,0,0,.07); border-color: rgba(0,0,0,.14); color: rgba(0,0,0,.88);}
+:root[data-theme="light"] .progress-bar{background: rgba(0,0,0,.06);}
+:root[data-theme="light"] .progress-fill{background: rgba(0,0,0,.85);}
+:root[data-theme="light"] .kpi,
+:root[data-theme="light"] .workout-top .mode,
+:root[data-theme="light"] .workout-top .rhythm{
+  background: rgba(255,255,255,.65);
+  border-color: rgba(0,0,0,.10);
+}
+
+/* --- Делавье: более читабельный вывод упражнений --- */
+.wk-title{ font-weight: 650; line-height: 1.25; }
+.wk-ex{ margin: 8px 0 0 18px; padding: 0; }
+.wk-ex li{ margin: 2px 0; color: var(--muted); font-size: 13px; line-height: 1.35; }
+.item.planned .wk-title{ color: var(--text); }
+
+/* --- Mobile (iPhone) polish v5 --- */
+:root{ --safe-b: env(safe-area-inset-bottom); --safe-t: env(safe-area-inset-top); --safe-l: env(safe-area-inset-left); --safe-r: env(safe-area-inset-right); }
+
+html{ -webkit-text-size-adjust: 100%; }
+body{ overflow-x:hidden; }
+*{ min-width:0; } /* prevent flex/grid overflow */
+
+button, .btn, .mini-btn, .tabbtn{ -webkit-tap-highlight-color: transparent; }
+input, select, textarea{ font-size:16px; } /* iOS: no zoom on focus */
+
+.cal-row{ -webkit-overflow-scrolling: touch; }
+
+/* Handle iOS dynamic viewport + fixed bottom bar */
+.shell{
+  padding-bottom: calc(110px + var(--safe-b));
+}
+
+@media (max-width: 520px){
+  /* Top bar: stack nicely */
+  .topbar{
+    flex-direction: column;
+    align-items: stretch;
+    gap:10px;
+    padding-top: calc(12px + var(--safe-t));
+    padding-left: max(12px, var(--safe-l));
+    padding-right: max(12px, var(--safe-r));
+  }
+  .brand{ justify-content:center; }
+  .top-actions{
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap:8px;
+  }
+
+  /* Main container */
+  .shell{
+    max-width: 100%;
+    margin: 0;
+    padding-left: max(12px, var(--safe-l));
+    padding-right: max(12px, var(--safe-r));
+    padding-top: 12px;
+  }
+
+  /* Bigger taps */
+  .btn{ min-height:44px; height:auto; padding:10px 12px; }
+  .mini-btn{ min-height:44px; padding:10px 12px; }
+  .input{ min-height:44px; height:auto; }
+
+  /* Rows wrap instead of overflow */
+  .row{
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+  .row > *{
+    flex: 1 1 220px;
+  }
+
+  /* Cards */
+  .card{ padding:12px; border-radius:18px; }
+  .card h2, .card h3{ line-height:1.15; }
+
+  /* Workout header grid -> single column */
+  .workout-top{ grid-template-columns: 1fr; gap:10px; }
+
+  /* Exercise list wrap */
+  .wk-item{ overflow:hidden; }
+  .wk-title{ word-break: break-word; }
+  .wk-ex li{ word-break: break-word; }
+
+  /* Bottom tabbar: allow 2 rows (fix squished tabs) */
+  .tabbar{
+    left: max(10px, var(--safe-l));
+    right: max(10px, var(--safe-r));
+    bottom: max(10px, var(--safe-b));
+    padding:10px;
+    padding-bottom: calc(10px + var(--safe-b));
+    flex-wrap: wrap;
+    gap:10px;
+  }
+  .tabbtn{
+    flex: 1 1 calc(50% - 10px);
+    padding:14px 10px;
+    text-align:center;
+    white-space: nowrap;
+    overflow:hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@media (max-width: 380px){
+  /* Very small iPhones: slightly tighter */
+  .day{ min-width:64px; padding:9px 9px; }
+  .tabbtn{ flex-basis: calc(50% - 10px); }
+}
+
+/* --- Mobile (iPhone) polish v6 --- */
+@media (max-width: 520px){
+  /* More breathable typography */
+  body{ font-size:16px; line-height:1.35; }
+  h1{ font-size:22px; }
+  h2{ font-size:18px; }
+  h3{ font-size:16px; }
+
+  /* Softer layout rhythm */
+  .shell{ gap:12px; }
+  .card{ box-shadow: 0 10px 24px rgba(0,0,0,.08); }
+
+  /* Inputs/controls: full width stacks */
+  .row{ gap:10px; }
+  .row > *{ flex: 1 1 100%; }
+
+  /* Calendar: nicer horizontal scroller */
+  .cal-row{
+    gap:10px;
+    padding: 6px 2px;
+    scroll-snap-type: x mandatory;
+  }
+  .day{
+    scroll-snap-align: start;
+    min-width: 76px;
+    border-radius: 16px;
+    padding: 10px 10px;
+  }
+  .day .dnum{ font-size:16px; }
+  .day .dname{ font-size:12px; opacity:.85; }
+
+  /* Workout list: clearer separation */
+  .wk-item{ padding: 12px; border-radius: 16px; }
+  .wk-ex{ margin-top:8px; }
+  .wk-ex li{ padding: 6px 0; }
+  .wk-ex li + li{ border-top: 1px solid rgba(255,255,255,.08); }
+
+  /* Tabbar: glassy + more app-like */
+  .tabbar{
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  /* Reduce "edge-to-edge" harshness */
+  .topbar, .shell{
+    padding-left: max(14px, var(--safe-l));
+    padding-right: max(14px, var(--safe-r));
+  }
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{ scroll-behavior:auto !important; transition:none !important; animation:none !important; }
+}
+
+/* --- Mobile usability v7 --- */
+.wk-wrap{ width:100%; }
+.wk-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.wk-toggle{
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  border-radius: 12px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: 18px;
+  line-height: 1;
+}
+.item.has-wk .wk-summary{ color: var(--muted); font-size: 13px; margin-top: 6px; }
+.item.has-wk.compact .wk-ex{ display:none; }
+.item.has-wk.expanded .wk-ex{ display:block; }
+.item.has-wk.expanded .wk-toggle{ transform: rotate(180deg); }
+
+@media (min-width: 521px){
+  .wk-toggle{ display:none; }
+  .item.has-wk .wk-summary{ display:none; }
+}
+
+/* Bigger touch targets for list action icons */
+.item-actions .icon-btn{
+  min-width:44px;
+  min-height:44px;
+  border-radius: 12px;
+}
+
+/* Mobile: sticky action row in workouts */
+@media (max-width: 520px){
+  .workout-row{
+    position: sticky;
+    top: calc(10px + var(--safe-t));
+    z-index: 40;
+    background: rgba(20,20,20,.72);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 18px;
+    padding: 10px;
+    box-shadow: 0 10px 24px rgba(0,0,0,.20);
+  }
+  .timer-pill{ min-height:44px; display:flex; align-items:center; justify-content:center; }
+}
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div>
+        <div class="title">TRACKER</div>
+        <div class="subtitle" id="activeSubtitle">дела</div>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <button class="btn ghost" id="importBtn" type="button" title="Импорт JSON">Импорт</button>
+      <button class="btn ghost" id="exportBtn" type="button" title="Экспорт JSON">Экспорт</button>
+      <button class="btn ghost" id="themeBtn" type="button" title="Сменить тему">Тема</button>
+      <button class="btn danger" id="resetBtn" type="button" title="Сбросить всё">Сброс</button>
+      <input id="importFile" type="file" accept="application/json" hidden />
+    </div>
+  </header>
+
+  <main class="shell">
+    <!-- TASKS -->
+    <section class="card tab active" data-tab="tasks">
+      <div class="head">
+        <div class="head-left">
+          <h2>Дела</h2>
+          <div class="hint">недели до 2030 · ✓ = выполнено</div>
+        </div>
+        <div class="head-right">
+          <span class="badge badge-strong" id="doneCounter">✓ 0</span>
+        </div>
+      </div>
+
+      <div class="calendar">
+        <div class="cal-nav">
+          <button class="nav-btn" id="taskPrevWeekBtn" type="button" title="Предыдущая неделя">‹</button>
+          <div class="cal-range" id="taskWeekRange">—</div>
+          <button class="nav-btn" id="taskNextWeekBtn" type="button" title="Следующая неделя">›</button>
+        </div>
+
+        <div class="cal-row" id="taskCal"></div>
+
+        <div class="cal-sub">
+          <span class="cal-label" id="taskCalLabel">—</span>
+          <div class="cal-sub-actions">
+            <button class="mini-btn" id="taskTodayBtn" type="button" title="К текущей неделе">Сегодня</button>
+            <button class="mini-btn" id="taskShowAllBtn" type="button" title="Показать все даты">Все</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <input id="taskText" class="input" placeholder="Новое дело…" />
+        <input id="taskDate" class="input date" type="date" />
+        <button id="addTaskBtn" class="btn" type="button">Добавить</button>
+      </div>
+
+      <div id="taskList" class="list"></div>
+
+      <button class="archive-toggle" id="toggleArchiveBtn" type="button">Показать выполненные</button>
+      <div id="taskArchive" class="list archive"></div>
+    </section>
+
+    <!-- BUDGET -->
+    <section class="card tab" data-tab="budget">
+      <div class="head">
+        <div class="head-left">
+          <h2>Бюджет</h2>
+          <div class="hint">неделя · месяц · лимит</div>
+        </div>
+      </div>
+
+      <div class="budget-summary">
+        <div class="kpi">
+          <div class="kpi-label">Неделя</div>
+          <div class="kpi-value" id="budgetWeekNet">0</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Месяц</div>
+          <div class="kpi-value" id="budgetMonthNet">0</div>
+        </div>
+      </div>
+
+      <div class="budget-limit">
+        <div class="progress-label" id="budgetLimitLabel">Лимит недели: 0 / 0</div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="budgetLimitFill"></div>
+        </div>
+      </div>
+
+      <div class="calendar">
+        <div class="cal-nav">
+          <button class="nav-btn" id="budgetPrevWeekBtn" type="button" title="Предыдущая неделя">‹</button>
+          <div class="cal-range" id="budgetWeekRange">—</div>
+          <button class="nav-btn" id="budgetNextWeekBtn" type="button" title="Следующая неделя">›</button>
+        </div>
+
+        <div class="cal-row" id="budgetCal"></div>
+
+        <div class="cal-sub">
+          <span class="cal-label" id="budgetCalLabel">—</span>
+          <div class="cal-sub-actions">
+            <button class="mini-btn" id="budgetTodayBtn" type="button" title="К текущей неделе">Сегодня</button>
+            <button class="mini-btn" id="budgetShowAllBtn" type="button" title="Показать все даты">Все</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <input id="txAmount" class="input" placeholder="+ / - сумма (например: -1200)" inputmode="decimal" />
+        <input id="txCategory" class="input" placeholder="категория (еда, транспорт…)" />
+        <input id="txDate" class="input date" type="date" />
+        <button id="addTxBtn" class="btn" type="button">Добавить</button>
+      </div>
+
+      <div class="row">
+        <input id="budgetLimitInput" class="input" placeholder="лимит недели (например 15000)" inputmode="decimal" />
+        <button id="saveBudgetLimitBtn" class="btn ghost" type="button">Сохранить лимит</button>
+      </div>
+
+      <div id="txList" class="list"></div>
+    </section>
+
+    <!-- WORKOUTS -->
+    <section class="card tab" data-tab="workouts">
+      <div class="head">
+        <div class="head-left">
+          <h2>Тренировки</h2>
+          <div class="hint">режим · план/факт · сессии</div>
+        </div>
+        <div class="head-right">
+          <span class="badge badge-strong" id="workoutDoneCounter">✓ 0</span>
+        </div>
+      </div>
+
+      <div class="workout-top">
+        <div class="mode">
+          <div class="hint">Режим недели</div>
+          <select id="workoutModeSelect" class="input">
+            <option value="recovery">Восстановление</option>
+            <option value="strength">Сила</option>
+            <option value="cardio">Кардио</option>
+            <option value="push">Интенсив</option>
+            <option value="mobility">Мобильность</option>
+          </select>
+        </div>
+        <div class="rhythm">
+          <div class="hint">Ритм</div>
+          <div class="rhythm-text" id="workoutRhythm">—</div>
+        </div>
+      </div>
+
+      <!-- DELAVIER PLAN -->
+      <div class="plan-box" id="delavierPlanBox">
+        <div class="plan-head">
+          <div>
+            <div class="plan-title">План по Делавье</div>
+            <div class="hint">шаблон из «Анатомии силовых упражнений» · добавит записи в «План»</div>
+          </div>
+          <div class="plan-badge">силовой</div>
+        </div>
+
+        <div class="row plan-row">
+          <select id="delavierPlanSelect" class="input">
+            <option value="beginner3">Новичок · 3 раза/нед</option>
+            <option value="base4">База · 4 раза/нед</option>
+            <option value="arms3">Акцент руки · 3 раза/нед</option>
+          </select>
+          <button id="delavierAddWeekBtn" class="btn" type="button" title="Добавить план на текущую неделю">Вставить неделю</button>
+          <button id="delavierAdd4wBtn" class="btn ghost" type="button" title="Добавить план на 4 недели вперёд">4 недели</button>
+        </div>
+
+        <div class="plan-note" id="delavierPlanNote">—</div>
+
+        <div class="row plan-row">
+          <button id="delavierClearWeekBtn" class="btn danger" type="button" title="Удалит планы Делавье в текущей неделе">Очистить неделю</button>
+        </div>
+      </div>
+
+
+      <div class="calendar">
+        <div class="cal-nav">
+          <button class="nav-btn" id="workoutPrevWeekBtn" type="button" title="Предыдущая неделя">‹</button>
+          <div class="cal-range" id="workoutWeekRange">—</div>
+          <button class="nav-btn" id="workoutNextWeekBtn" type="button" title="Следующая неделя">›</button>
+        </div>
+
+        <div class="cal-row" id="workoutCal"></div>
+
+        <div class="cal-sub">
+          <span class="cal-label" id="workoutCalLabel">—</span>
+          <div class="cal-sub-actions">
+            <button class="mini-btn" id="workoutTodayBtn" type="button" title="К текущей неделе">Сегодня</button>
+            <button class="mini-btn" id="workoutShowAllBtn" type="button" title="Показать все даты">Все</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <input id="workoutName" class="input" placeholder="Тренировка…" />
+        <input id="workoutDate" class="input date" type="date" />
+      </div>
+
+      <div class="row">
+        <button id="addWorkoutBtn" class="btn ghost" type="button" title="Запланировать">План</button>
+        <button id="startWorkoutBtn" class="btn" type="button" title="Начать сессию">Начать</button>
+        <div class="timer-pill" id="workoutTimerPill">00:00</div>
+      </div>
+
+      <div id="workoutList" class="list"></div>
+
+      <button class="archive-toggle" id="toggleWorkoutArchiveBtn" type="button">Показать завершённые</button>
+      <div id="workoutArchive" class="list archive"></div>
+    </section>
+  </main>
+
+  <nav class="tabbar" aria-label="Навигация">
+    <button class="tabbtn active" data-go="tasks" type="button">Дела</button>
+    <button class="tabbtn" data-go="budget" type="button">Бюджет</button>
+    <button class="tabbtn" data-go="workouts" type="button">Тренировки</button>
+  </nav>
+
+  <script>
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => Array.from(document.querySelectorAll(s));
+
+const STORE_KEY = "tracker_v9";
+
+// Планирование до 2030
+const MAX_ISO = "2030-12-31";
+const MIN_ISO = "2000-01-01";
+
+const state = {
+  tab: "tasks",
+  ui: {
+    theme: "dark",
+
+    // tasks/workouts
+    taskSelectedDate: null,
+    workoutSelectedDate: null,
+    showArchive: false,
+    taskWeekStartISO: null,
+    workoutWeekStartISO: null,
+
+    // budget
+    budgetSelectedDate: null,
+    budgetShowAll: true,
+    budgetWeekStartISO: null,
+
+    // workouts UI
+    showWorkoutArchive: false,
+    delavierPlanKey: "beginner3",
+  },
+  tasks: [],
+  tasksDone: [],
+  txs: [],
+  workouts: [],              // {id, name, dateISO, kind:'plan'|'session', startedAt?, endedAt?}
+  workoutModeByWeek: {}      // {weekStartISO: mode}
+};
+
+function uid(){
+  return Math.random().toString(16).slice(2) + Date.now().toString(16);
+}
+
+function clampISO(iso){
+  if(iso < MIN_ISO) return MIN_ISO;
+  if(iso > MAX_ISO) return MAX_ISO;
+  return iso;
+}
+
+function todayISO(){
+  const d = new Date();
+  const tz = new Date(d.getTime() - d.getTimezoneOffset()*60000);
+  return tz.toISOString().slice(0,10);
+}
+
+function addDaysISO(iso, days){
+  const d = new Date(iso + "T00:00:00");
+  d.setDate(d.getDate() + days);
+  const tz = new Date(d.getTime() - d.getTimezoneOffset()*60000);
+  return clampISO(tz.toISOString().slice(0,10));
+}
+
+function startOfWeekISO(iso){
+  const d = new Date(iso + "T00:00:00");
+  const day = d.getDay();
+  const diff = (day === 0 ? -6 : 1 - day);
+  d.setDate(d.getDate() + diff);
+  const tz = new Date(d.getTime() - d.getTimezoneOffset()*60000);
+  return clampISO(tz.toISOString().slice(0,10));
+}
+
+function startOfMonthISO(iso){
+  const d = new Date(iso + "T00:00:00");
+  d.setDate(1);
+  const tz = new Date(d.getTime() - d.getTimezoneOffset()*60000);
+  return tz.toISOString().slice(0,10);
+}
+function endOfMonthISO(iso){
+  const d = new Date(iso + "T00:00:00");
+  d.setMonth(d.getMonth()+1, 0);
+  const tz = new Date(d.getTime() - d.getTimezoneOffset()*60000);
+  return tz.toISOString().slice(0,10);
+}
+
+function isoToLabel(iso){
+  const d = new Date(iso + "T00:00:00");
+  const wd = ["Вс","Пн","Вт","Ср","Чт","Пт","Сб"][d.getDay()];
+  const dd = String(d.getDate()).padStart(2,"0");
+  const mm = String(d.getMonth()+1).padStart(2,"0");
+  const yy = d.getFullYear();
+  return `${wd}, ${dd}.${mm}.${yy}`;
+}
+
+function rangeLabel(weekStartISO){
+  const a = new Date(weekStartISO + "T00:00:00");
+  const bISO = addDaysISO(weekStartISO, 6);
+  const b = new Date(bISO + "T00:00:00");
+  const dd1 = String(a.getDate()).padStart(2,"0");
+  const mm1 = String(a.getMonth()+1).padStart(2,"0");
+  const dd2 = String(b.getDate()).padStart(2,"0");
+  const mm2 = String(b.getMonth()+1).padStart(2,"0");
+  const y1 = a.getFullYear();
+  const y2 = b.getFullYear();
+  return y1 === y2 ? `${dd1}.${mm1} — ${dd2}.${mm2}.${y2}` : `${dd1}.${mm1}.${y1} — ${dd2}.${mm2}.${y2}`;
+}
+
+function dayShort(iso){
+  const d = new Date(iso + "T00:00:00");
+  return ["Вс","Пн","Вт","Ср","Чт","Пт","Сб"][d.getDay()];
+}
+
+function escapeHtml(s){
+  return String(s)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+function formatWorkoutName(name){
+  const str = String(name || "");
+  // Делавье-план: "План (Делавье) · ...: упр1; упр2; ..."
+  const isDelavier = typeof DELAVIER_PREFIX !== "undefined" && str.startsWith(DELAVIER_PREFIX) && str.includes(":");
+  const looksStructured = str.includes(";") && str.includes(":");
+
+  if(isDelavier || looksStructured){
+    const idx = str.indexOf(":");
+    const head = str.slice(0, idx).trim();
+    const rest = str.slice(idx+1).trim();
+
+    const parts = rest.split(";").map(x => x.trim()).filter(Boolean);
+    if(parts.length){
+      const lis = parts.map(p => `<li>${escapeHtml(p)}</li>`).join("");
+      const summary = `${parts.length} упражн.`;
+      return `
+        <div class="wk-wrap">
+          <div class="wk-head">
+            <div class="wk-title">${escapeHtml(head)}</div>
+            <button class="wk-toggle" type="button" aria-label="Показать упражнения" title="Показать упражнения">▾</button>
+          </div>
+          <div class="wk-summary">${summary}</div>
+          <ul class="wk-ex">${lis}</ul>
+        </div>
+      `;
+    }
+  }
+
+  return escapeHtml(str);
+}
+
+function save(){
+  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+}
+
+function load(){
+  const raw = localStorage.getItem(STORE_KEY);
+  if(!raw) return;
+  try{
+    const parsed = JSON.parse(raw);
+    if(!parsed || typeof parsed !== "object") return;
+
+    state.tab = parsed.tab || state.tab;
+    state.ui = parsed.ui && typeof parsed.ui === "object" ? { ...state.ui, ...parsed.ui } : state.ui;
+
+    state.tasks = Array.isArray(parsed.tasks) ? parsed.tasks : state.tasks;
+    state.tasksDone = Array.isArray(parsed.tasksDone) ? parsed.tasksDone : (Array.isArray(parsed.archive) ? parsed.archive : state.tasksDone);
+    state.txs = Array.isArray(parsed.txs) ? parsed.txs : state.txs;
+    state.workouts = Array.isArray(parsed.workouts) ? parsed.workouts : state.workouts;
+    state.workoutModeByWeek = parsed.workoutModeByWeek && typeof parsed.workoutModeByWeek === "object" ? parsed.workoutModeByWeek : (state.workoutModeByWeek||{});
+
+    const t0 = todayISO();
+
+    // tasks
+    state.tasks = state.tasks.map(t => ({ id: t.id || uid(), text: t.text ?? String(t), dateISO: clampISO(t.dateISO || t.date || t0) }));
+    state.tasksDone = state.tasksDone.map(t => ({ id: t.id || uid(), text: t.text ?? String(t), dateISO: clampISO(t.dateISO || t.date || t0), doneAt: t.doneAt || Date.now() }));
+
+    // budget txs
+    state.txs = state.txs.map(tx => {
+      if(tx && typeof tx === "object"){
+        const amt = Number(String(tx.amount ?? tx.value ?? tx.sum ?? 0).replace(",", "."));
+        return {
+          id: tx.id || uid(),
+          amount: Number.isFinite(amt) ? amt : 0,
+          category: (tx.category || tx.cat || "прочее").toString(),
+          dateISO: clampISO(tx.dateISO || tx.date || t0),
+          createdAt: tx.createdAt || Date.now()
+        };
+      }
+      const amt = Number(String(tx).replace(",", "."));
+      return { id: uid(), amount: Number.isFinite(amt)?amt:0, category:"прочее", dateISO:t0, createdAt:Date.now() };
+    });
+
+    // workouts migrate: support old {name,dateISO} or done arrays
+    state.workouts = state.workouts.map(w => {
+      if(w && typeof w === "object"){
+        const kind = w.kind || (w.startedAt || w.endedAt ? "session" : "plan");
+        return {
+          id: w.id || uid(),
+          name: w.name ?? String(w),
+          dateISO: clampISO(w.dateISO || w.date || t0),
+          kind,
+          startedAt: w.startedAt || null,
+          endedAt: w.endedAt || null
+        };
+      }
+      return { id: uid(), name: String(w), dateISO: t0, kind: "plan", startedAt: null, endedAt: null };
+    });
+
+  }catch{}
+}
+
+/* ---------- Theme ---------- */
+function applyTheme(){
+  const theme = (state.ui && state.ui.theme) ? state.ui.theme : "dark";
+  document.documentElement.setAttribute("data-theme", theme === "light" ? "light" : "dark");
+}
+function toggleTheme(){
+  state.ui.theme = (state.ui.theme === "light") ? "dark" : "light";
+  save();
+  applyTheme();
+}
+
+/* ---------- Shared ---------- */
+function weekDays(weekStartISO){
+  return Array.from({length:7}, (_,i)=> addDaysISO(weekStartISO, i));
+}
+function countByDate(items){
+  const m = new Map();
+  for(const it of items){
+    const k = it.dateISO || "";
+    m.set(k, (m.get(k) || 0) + 1);
+  }
+  return m;
+}
+
+/* ---------- Tabs ---------- */
+function setTab(name){
+  state.tab = name;
+  save();
+  $("#activeSubtitle").textContent = name === "budget" ? "бюджет" : (name === "workouts" ? "тренировки" : "дела");
+  $$(".card").forEach(c => c.classList.toggle("active", c.dataset.tab === name));
+  $$(".tabbtn").forEach(b => b.classList.toggle("active", b.dataset.go === name));
+}
+
+/* =========================
+   TASKS (НЕ ТРОГАЕМ)
+   ========================= */
+function renderTaskCalendar(){
+  const ws = state.ui.taskWeekStartISO;
+  $("#taskWeekRange").textContent = rangeLabel(ws);
+
+  const prevStart = addDaysISO(ws, -7);
+  $("#taskPrevWeekBtn").disabled = prevStart < MIN_ISO;
+  $("#taskNextWeekBtn").disabled = addDaysISO(ws, 6) >= MAX_ISO;
+
+  const selected = state.ui.taskSelectedDate;
+  const counts = countByDate(state.tasks);
+
+  $("#taskCal").innerHTML = weekDays(ws).map(iso => {
+    const c = counts.get(iso) || 0;
+    const active = selected === iso ? "active" : "";
+    const today = iso === todayISO();
+    return `
+      <button class="day ${active}" data-iso="${iso}" type="button" title="${isoToLabel(iso)}">
+        <div class="day-top">
+          <span>${dayShort(iso)}</span>
+          ${c ? `<span class="badge">${c}</span>` : (today ? `<span class="badge">сегодня</span>` : ``)}
+        </div>
+        <div class="day-num">${Number(iso.slice(8,10))}</div>
+      </button>
+    `;
+  }).join("");
+
+  $("#taskCalLabel").textContent = selected ? `Фильтр: ${isoToLabel(selected)}` : "Фильтр: все даты";
+
+  $("#taskCal").querySelectorAll(".day").forEach(btn => {
+    btn.onclick = () => {
+      const iso = btn.dataset.iso;
+      state.ui.taskSelectedDate = iso;
+      $("#taskDate").value = iso;
+      save();
+      renderTasks();
+    };
+  });
+}
+
+function doneCountForTaskView(){
+  const selected = state.ui.taskSelectedDate;
+  if(selected) return state.tasksDone.filter(t => t.dateISO === selected).length;
+  const ws = state.ui.taskWeekStartISO;
+  const we = addDaysISO(ws, 6);
+  return state.tasksDone.filter(t => t.dateISO >= ws && t.dateISO <= we).length;
+}
+
+function renderTasks(){
+  renderTaskCalendar();
+  $("#doneCounter").textContent = `✓ ${doneCountForTaskView()}`;
+
+  const selected = state.ui.taskSelectedDate;
+  const items = selected ? state.tasks.filter(t => t.dateISO === selected) : state.tasks;
+
+  const list = $("#taskList");
+  if(items.length === 0){
+    list.innerHTML = `<div class="item"><div class="item-text" style="color:rgba(255,255,255,.55)">Пока пусто. Выбери день и добавь дело.</div></div>`;
+  } else {
+    list.innerHTML = items.map(t => `
+      <div class="item" data-id="${t.id}">
+        <div class="item-text">
+          ${escapeHtml(t.text)}
+          <div class="item-meta">${isoToLabel(t.dateISO)}</div>
+        </div>
+        <div class="item-actions">
+          <button class="icon-btn done" data-action="done" type="button" title="Выполнено">✓</button>
+          <button class="icon-btn del" data-action="del" type="button" title="Удалить">✕</button>
+        </div>
+      </div>
+    `).join("");
+
+    list.querySelectorAll("[data-action='done']").forEach(btn => {
+      btn.onclick = (e) => {
+        const id = e.target.closest(".item").dataset.id;
+        const t = state.tasks.find(x => x.id === id);
+        state.tasks = state.tasks.filter(x => x.id !== id);
+        if(t) state.tasksDone.unshift({ ...t, doneAt: Date.now() });
+        save();
+        renderTasks();
+      };
+    });
+    list.querySelectorAll("[data-action='del']").forEach(btn => {
+      btn.onclick = (e) => {
+        const id = e.target.closest(".item").dataset.id;
+        state.tasks = state.tasks.filter(x => x.id !== id);
+        save();
+        renderTasks();
+      };
+    });
+  }
+
+  const arch = $("#taskArchive");
+  const show = !!state.ui.showArchive;
+  arch.classList.toggle("show", show);
+  $("#toggleArchiveBtn").textContent = show ? "Скрыть выполненные" : "Показать выполненные";
+
+  if(show){
+    const doneItems = selected ? state.tasksDone.filter(t => t.dateISO === selected) : state.tasksDone;
+    if(doneItems.length === 0){
+      arch.innerHTML = `<div class="item"><div class="item-text" style="color:rgba(255,255,255,.55)">Выполненных пока нет.</div></div>`;
+    } else {
+      arch.innerHTML = doneItems.map(t => `
+        <div class="item">
+          <div class="item-text">
+            ${escapeHtml(t.text)}
+            <div class="item-meta">${isoToLabel(t.dateISO)} · выполнено</div>
+          </div>
+        </div>
+      `).join("");
+    }
+  }
+}
+
+function addTask(){
+  const text = $("#taskText").value.trim();
+  if(!text) return;
+  const picked = clampISO($("#taskDate").value || state.ui.taskSelectedDate || todayISO());
+  state.tasks.unshift({ id: uid(), text, dateISO: picked });
+  $("#taskText").value = "";
+  $("#taskDate").value = picked;
+  state.ui.taskWeekStartISO = startOfWeekISO(picked);
+  state.ui.taskSelectedDate = picked;
+  save();
+  renderTasks();
+}
+
+/* =========================
+   BUDGET (НЕ ТРОГАЕМ)
+   ========================= */
+function parseAmount(raw){
+  const s = String(raw || "").trim().replace(",", ".");
+  if(!s) return null;
+  const n = Number(s);
+  if(!Number.isFinite(n) || n === 0) return null;
+  return n;
+}
+
+function fmtNet(n){
+  const num = Number(n || 0);
+  const sign = num > 0 ? "+" : (num < 0 ? "−" : "");
+  const abs = Math.abs(num);
+  const formatted = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(abs);
+  return sign ? `${sign}${formatted}` : "0";
+}
+
+function getBudgetLimit(){
+  const raw = localStorage.getItem(STORE_KEY + "_budget_limit");
+  const n = Number(String(raw || "").replace(",", "."));
+  return Number.isFinite(n) ? n : 15000;
+}
+function setBudgetLimit(n){
+  localStorage.setItem(STORE_KEY + "_budget_limit", String(n));
+}
+
+function ensureBudgetUIState(){
+  const t0 = todayISO();
+  if(!state.ui.budgetWeekStartISO) state.ui.budgetWeekStartISO = startOfWeekISO(state.ui.budgetSelectedDate || t0);
+  if(!state.ui.budgetSelectedDate) state.ui.budgetSelectedDate = t0;
+  if(typeof state.ui.budgetShowAll !== "boolean") state.ui.budgetShowAll = true;
+}
+
+function budgetWeekTx(){
+  const ws = state.ui.budgetWeekStartISO;
+  const we = addDaysISO(ws, 6);
+  return state.txs.filter(t => t.dateISO >= ws && t.dateISO <= we);
+}
+function budgetMonthTx(){
+  const base = state.ui.budgetSelectedDate || todayISO();
+  const ms = startOfMonthISO(base);
+  const me = endOfMonthISO(base);
+  return state.txs.filter(t => t.dateISO >= ms && t.dateISO <= me);
+}
+
+function renderBudgetCalendar(){
+  const ws = state.ui.budgetWeekStartISO;
+  $("#budgetWeekRange").textContent = rangeLabel(ws);
+
+  const prevStart = addDaysISO(ws, -7);
+  $("#budgetPrevWeekBtn").disabled = prevStart < MIN_ISO;
+  $("#budgetNextWeekBtn").disabled = addDaysISO(ws, 6) >= MAX_ISO;
+
+  const selected = state.ui.budgetShowAll ? null : state.ui.budgetSelectedDate;
+  $("#budgetCalLabel").textContent = selected ? `Фильтр: ${isoToLabel(selected)}` : "Фильтр: все даты";
+
+  const counts = countByDate(state.txs);
+  $("#budgetCal").innerHTML = weekDays(ws).map(iso => {
+    const c = counts.get(iso) || 0;
+    const active = selected === iso ? "active" : "";
+    const today = iso === todayISO();
+    return `
+      <button class="day ${active}" data-iso="${iso}" type="button" title="${isoToLabel(iso)}">
+        <div class="day-top">
+          <span>${dayShort(iso)}</span>
+          ${c ? `<span class="badge">${c}</span>` : (today ? `<span class="badge">сегодня</span>` : ``)}
+        </div>
+        <div class="day-num">${Number(iso.slice(8,10))}</div>
+      </button>
+    `;
+  }).join("");
+
+  $("#budgetCal").querySelectorAll(".day").forEach(btn => {
+    btn.onclick = () => {
+      const iso = btn.dataset.iso;
+      state.ui.budgetSelectedDate = iso;
+      state.ui.budgetShowAll = false;
+      $("#txDate").value = iso;
+      save();
+      renderBudget();
+    };
+  });
+}
+
+function renderBudget(){
+  ensureBudgetUIState();
+
+  const limit = getBudgetLimit();
+  $("#budgetLimitInput").value = String(limit);
+  $("#txDate").value = state.ui.budgetSelectedDate || todayISO();
+
+  renderBudgetCalendar();
+
+  const weekNet = budgetWeekTx().reduce((a,t)=>a + (Number(t.amount)||0), 0);
+  const monthNet = budgetMonthTx().reduce((a,t)=>a + (Number(t.amount)||0), 0);
+  $("#budgetWeekNet").textContent = fmtNet(weekNet);
+  $("#budgetMonthNet").textContent = fmtNet(monthNet);
+
+  const weekSpent = budgetWeekTx().filter(t => Number(t.amount) < 0).reduce((a,t)=>a + Math.abs(Number(t.amount)||0), 0);
+  const pct = limit > 0 ? Math.min(100, Math.round((weekSpent/limit)*100)) : 0;
+  $("#budgetLimitLabel").textContent = `Лимит недели: ${Math.round(weekSpent)} / ${Math.round(limit)}`;
+  $("#budgetLimitFill").style.width = pct + "%";
+
+  let items = budgetWeekTx();
+  if(!state.ui.budgetShowAll && state.ui.budgetSelectedDate){
+    items = items.filter(t => t.dateISO === state.ui.budgetSelectedDate);
+  }
+
+  const list = $("#txList");
+  if(items.length === 0){
+    list.innerHTML = `<div class="item"><div class="item-text" style="color:rgba(255,255,255,.55)">Пока нет записей. Добавь: -1200, категория, дата.</div></div>`;
+    return;
+  }
+
+  list.innerHTML = items.map(t => {
+    const amt = Number(t.amount)||0;
+    const sign = amt > 0 ? "+" : "−";
+    const abs = Math.abs(amt);
+    const line = `${sign}${new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 2 }).format(abs)}`;
+    return `
+      <div class="item" data-id="${t.id}">
+        <div class="item-text">
+          ${line}
+          <div class="item-meta">${escapeHtml(t.category || "прочее")} · ${t.dateISO}</div>
+        </div>
+        <div class="item-actions">
+          <button class="icon-btn del" data-action="del" type="button" title="Удалить">✕</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  list.querySelectorAll("[data-action='del']").forEach(btn => {
+    btn.onclick = (e) => {
+      const id = e.target.closest(".item").dataset.id;
+      state.txs = state.txs.filter(x => x.id !== id);
+      save();
+      renderBudget();
+    };
+  });
+}
+
+function addTx(){
+  const amt = parseAmount($("#txAmount").value);
+  if(amt === null) return;
+
+  const dateISO = clampISO($("#txDate").value || state.ui.budgetSelectedDate || todayISO());
+  const category = ($("#txCategory").value || "").trim() || "прочее";
+
+  state.txs.unshift({
+    id: uid(),
+    amount: amt,
+    category,
+    dateISO,
+    createdAt: Date.now()
+  });
+
+  $("#txAmount").value = "";
+  $("#txCategory").value = "";
+
+  state.ui.budgetSelectedDate = dateISO;
+  state.ui.budgetWeekStartISO = startOfWeekISO(dateISO);
+  state.ui.budgetShowAll = false;
+
+  save();
+  renderBudget();
+}
+
+/* =========================
+   WORKOUTS (ПЕРЕРАБОТАНО)
+   ========================= */
+function normalizeWorkoutMode(raw){
+  const m = String(raw || "").trim().toLowerCase();
+  const map = {
+    "восстановление": "recovery",
+    "сила": "strength",
+    "кардио": "cardio",
+    "интенсив": "push",
+    "мобильность": "mobility"
+  };
+  return map[m] || m;
+}
+
+function getWorkoutMode(weekStartISO){
+  const raw = state.workoutModeByWeek[weekStartISO];
+  const mode = normalizeWorkoutMode(raw || "recovery");
+  return ["recovery","strength","cardio","push","mobility"].includes(mode) ? mode : "recovery";
+}
+function setWorkoutMode(weekStartISO, mode){
+  state.workoutModeByWeek[weekStartISO] = mode;
+  save();
+}
+
+function workoutScopeRange(){
+  const ws = state.ui.workoutWeekStartISO;
+  return { ws, we: addDaysISO(ws, 6) };
+}
+
+function workoutsInScope(){
+  const {ws,we} = workoutScopeRange();
+  let items = state.workouts.filter(w => w.dateISO >= ws && w.dateISO <= we);
+  if(state.ui.workoutSelectedDate){
+    items = items.filter(w => w.dateISO === state.ui.workoutSelectedDate);
+  }
+  return items;
+}
+
+function workoutFactsAll(){
+  // completed sessions only
+  return state.workouts.filter(w => w.kind === "session" && w.endedAt);
+}
+
+function doneCountForWorkoutView(){
+  const {ws,we} = workoutScopeRange();
+  if(state.ui.workoutSelectedDate){
+    return state.workouts.filter(w => w.kind === "session" && w.endedAt && w.dateISO === state.ui.workoutSelectedDate).length;
+  }
+  return state.workouts.filter(w => w.kind === "session" && w.endedAt && w.dateISO >= ws && w.dateISO <= we).length;
+}
+
+function renderWorkoutCalendar(){
+  const ws = state.ui.workoutWeekStartISO;
+  $("#workoutWeekRange").textContent = rangeLabel(ws);
+
+  const prevStart = addDaysISO(ws, -7);
+  $("#workoutPrevWeekBtn").disabled = prevStart < MIN_ISO;
+  $("#workoutNextWeekBtn").disabled = addDaysISO(ws, 6) >= MAX_ISO;
+
+  const selected = state.ui.workoutSelectedDate;
+  const counts = countByDate(state.workouts);
+
+  $("#workoutCal").innerHTML = weekDays(ws).map(iso => {
+    const c = counts.get(iso) || 0;
+    const active = selected === iso ? "active" : "";
+    const today = iso === todayISO();
+    return `
+      <button class="day ${active}" data-iso="${iso}" type="button" title="${isoToLabel(iso)}">
+        <div class="day-top">
+          <span>${dayShort(iso)}</span>
+          ${c ? `<span class="badge">${c}</span>` : (today ? `<span class="badge">сегодня</span>` : ``)}
+        </div>
+        <div class="day-num">${Number(iso.slice(8,10))}</div>
+      </button>
+    `;
+  }).join("");
+
+  $("#workoutCalLabel").textContent = selected ? `Фильтр: ${isoToLabel(selected)}` : "Фильтр: все даты";
+
+  $("#workoutCal").querySelectorAll(".day").forEach(btn => {
+    btn.onclick = () => {
+      const iso = btn.dataset.iso;
+      state.ui.workoutSelectedDate = iso;
+      $("#workoutDate").value = iso;
+      save();
+      renderWorkouts();
+    };
+  });
+}
+
+function humanDaysAgo(fromISO){
+  const a = new Date(fromISO + "T00:00:00").getTime();
+  const b = new Date(todayISO() + "T00:00:00").getTime();
+  const d = Math.max(0, Math.round((b - a)/86400000));
+  if(d === 0) return "сегодня";
+  if(d === 1) return "вчера";
+  return `${d} дн. назад`;
+}
+
+let workoutTimerInterval = null;
+
+function updateWorkoutTimerUI(active){
+  const pill = $("#workoutTimerPill");
+  // always stop previous timer first
+  clearInterval(workoutTimerInterval);
+  workoutTimerInterval = null;
+
+  if(!active){
+    pill.textContent = "00:00";
+    return;
+  }
+
+  const start = active.startedAt;
+  const tick = () => {
+    const sec = Math.max(0, Math.floor((Date.now() - start)/1000));
+    const m = String(Math.floor(sec/60)).padStart(2,"0");
+    const s = String(sec%60).padStart(2,"0");
+    pill.textContent = `${m}:${s}`;
+  };
+  tick();
+  workoutTimerInterval = setInterval(tick, 1000);
+}
+
+
+function startWorkoutSession(){
+  const name = $("#workoutName").value.trim();
+  if(!name) return;
+
+  const dateISO = clampISO($("#workoutDate").value || state.ui.workoutSelectedDate || todayISO());
+
+  // prevent multiple active sessions at once
+  const already = state.workouts.find(w => w.kind === "session" && w.startedAt && !w.endedAt);
+  if(already) return;
+
+  state.workouts.unshift({
+    id: uid(),
+    name,
+    dateISO,
+    kind: "session",
+    startedAt: Date.now(),
+    endedAt: null
+  });
+
+  $("#workoutName").value = "";
+  state.ui.workoutSelectedDate = dateISO;
+  state.ui.workoutWeekStartISO = startOfWeekISO(dateISO);
+  save();
+  renderWorkouts();
+}
+
+
+function finishWorkoutSession(id){
+  const w = state.workouts.find(x => x.id === id);
+  if(!w || w.kind !== "session" || w.endedAt) return;
+  w.endedAt = Date.now();
+  clearInterval(workoutTimerInterval);
+  workoutTimerInterval = null;
+  save();
+  renderWorkouts();
+}
+
+
+function addWorkoutPlan(){
+  const name = $("#workoutName").value.trim();
+  if(!name) return;
+
+  const dateISO = clampISO($("#workoutDate").value || state.ui.workoutSelectedDate || todayISO());
+
+  state.workouts.unshift({
+    id: uid(),
+    name,
+    dateISO,
+    kind: "plan",
+    startedAt: null,
+    endedAt: null
+  });
+
+  $("#workoutName").value = "";
+  state.ui.workoutSelectedDate = dateISO;
+  state.ui.workoutWeekStartISO = startOfWeekISO(dateISO);
+  save();
+  renderWorkouts();
+}
+
+
+/* ---------- Delavier plan templates ---------- */
+const DELAVIER_PREFIX = "План (Делавье)";
+
+function delavierTemplateByKey(key){
+  const templates = {
+    beginner3: {
+      label: "Новичок · 4 раза/нед (пн/ср/пт/вс)",
+      days: [0,2,4,6], // пн/ср/пт/вс
+      sessions: [
+        {
+          title: "День 1 · Ноги + Грудь",
+          text: "присед 4×6–8; жим лёжа 4×6–8; тяга в наклоне 3×8–10; планка 3×30–45с"
+        },
+        {
+          title: "День 2 · Спина + Плечи",
+          text: "румынская тяга 3×8–10; жим стоя 4×6–8; подтягивания/верхний блок 3×8–10; пресс 3×12–15"
+        },
+        {
+          title: "День 3 · Ноги + Верх",
+          text: "выпады 3×10/нога; жим гантелей 3×8–12; горизонтальная тяга 3×8–12 (икры 2×15 по желанию)"
+        }
+      ,
+        {
+          title: "День 4 · Руки (бицепс + трицепс + предплечья)",
+          text: "сгибания с гантелями поочерёдно 3×10–12; молоток 3×10–12; французский жим 3×8–10; разгибание рук на блоке 3×10–12"
+        }
+      ],
+      note: "Разминка 8–12 мин. Отдых 90–150с. Оставляй 1–2 повтора в запасе."
+    },
+    base4: {
+      label: "База · 4 раза/нед (вс — руки)",
+      days: [0,2,4,6], // пн/ср/пт/вс
+      sessions: [
+        {
+          title: "День 1 · Верх (жим)",
+          text: "жим лёжа 4×6–8; жим гантелей на наклонной 3×8–10; отжимания на брусьях 3×6–10; трицепс блок 3×10–12"
+        },
+        {
+          title: "День 2 · Низ",
+          text: "присед 4×6–8; румынская тяга 3×8–10; сгибание/разгибание ног 3×10–12; икры 4×12–15"
+        },
+        {
+          title: "День 3 · Верх (тяга)",
+          text: "подтягивания/верхний блок 4×6–10; тяга штанги в наклоне 3×8–10; тяга к лицу 2×12–15"
+        },
+        {
+          title: "День 4 · Руки (бицепс + трицепс + предплечья)",
+          text: "сгибания с гантелями поочерёдно 3×10–12; молоток 3×10–12; французский жим 3×8–10; разгибание рук на блоке 3×10–12"
+        }
+      ],
+      note: "Тяжёлые подходы — техника приоритет. Не гонись за отказом."
+    },
+    arms3: {
+      label: "Акцент руки · 4 раза/нед (пн/ср/пт/вс)",
+      days: [0,2,4,6], // пн/ср/пт/вс
+      sessions: [
+        {
+          title: "День 1 · Спина + Бицепс",
+          text: "подтягивания/верхний блок 4×6–10; тяга гантели 3×8–12; сгибания с гантелями поочерёдно 3×10–12; молоток 3×10–12 (разгибание запястий 2×15 по желанию)"
+        },
+        {
+          title: "День 2 · Грудь + Трицепс",
+          text: "жим лёжа 4×6–8; разводки 3×10–12; отжимания узким хватом 3×8–12; разгибание рук 3×10–12"
+        },
+        {
+          title: "День 3 · Ноги + Предплечья",
+          text: "присед 4×6–8; румынская тяга 3×8–10; подъёмы на икры 4×12–15"
+        }
+      ,
+        {
+          title: "День 4 · Руки (бицепс + трицепс + предплечья)",
+          text: "сгибания с гантелями поочерёдно 3×10–12; молоток 3×10–12; французский жим 3×8–10; разгибание рук на блоке 3×10–12"
+        }
+      ],
+      note: "Упражнения на руки — контроль амплитуды, без рывков."
+    }
+  };
+  return templates[key] || templates.beginner3;
+}
+
+function delavierPlanItemsForWeek(weekStartISO, key){
+  const tpl = delavierTemplateByKey(key);
+  const items = tpl.days.map((offset, i) => {
+    const dateISO = addDaysISO(weekStartISO, offset);
+    const sess = tpl.sessions[i % tpl.sessions.length];
+    return {
+      dateISO,
+      name: `${DELAVIER_PREFIX} · ${sess.title}: ${sess.text}`
+    };
+  });
+  return { tpl, items };
+}
+
+function delavierAddPlans(weekStartISO, key, weeksCount){
+  const n = Math.max(1, Math.min(12, Number(weeksCount) || 1));
+  for(let w=0; w<n; w++){
+    const ws = addDaysISO(weekStartISO, w*7);
+    const { items } = delavierPlanItemsForWeek(ws, key);
+    for(const it of items){
+      const exists = state.workouts.some(x =>
+        x && x.kind === "plan" && x.dateISO === it.dateISO && String(x.name||"").startsWith(DELAVIER_PREFIX)
+      );
+      if(exists) continue;
+      state.workouts.unshift({
+        id: uid(),
+        name: it.name,
+        dateISO: it.dateISO,
+        kind: "plan",
+        startedAt: null,
+        endedAt: null
+      });
+    }
+  }
+  save();
+}
+
+function delavierClearWeek(weekStartISO){
+  const ws = weekStartISO;
+  const we = addDaysISO(ws, 6);
+  state.workouts = state.workouts.filter(w => {
+    if(!w || w.kind !== "plan") return true;
+    if(w.dateISO < ws || w.dateISO > we) return true;
+    return !String(w.name||"").startsWith(DELAVIER_PREFIX);
+  });
+  save();
+}
+
+function renderDelavierPlanUI(){
+  const box = $("#delavierPlanBox");
+  if(!box) return;
+
+  if(!state.ui.delavierPlanKey) state.ui.delavierPlanKey = "beginner3";
+
+  const sel = $("#delavierPlanSelect");
+  if(sel) sel.value = state.ui.delavierPlanKey;
+
+  const note = $("#delavierPlanNote");
+  if(note){
+    const ws = state.ui.workoutWeekStartISO;
+    const tpl = delavierTemplateByKey(state.ui.delavierPlanKey);
+    const days = tpl.days.map(o => dayShort(addDaysISO(ws, o))).join(" · ");
+    note.textContent = `${tpl.label}. Дни: ${days}. ${tpl.note}`;
+  }
+}
+
+function renderWorkoutRhythm(){
+  const el = $("#workoutRhythm");
+  const facts = workoutFactsAll();
+  if(facts.length === 0){
+    el.textContent = "пока нет факта";
+    return;
+  }
+  facts.sort((a,b)=> (b.endedAt||0)-(a.endedAt||0));
+  const last = facts[0];
+  const lastWhen = humanDaysAgo(last.dateISO);
+
+  const since14 = Date.now() - 14*86400000;
+  const count14 = facts.filter(w => (w.endedAt||0) >= since14).length;
+
+  const lastDateMs = new Date(last.dateISO + "T00:00:00").getTime();
+  const nowMs = new Date(todayISO() + "T00:00:00").getTime();
+  const days = Math.max(0, Math.round((nowMs - lastDateMs)/86400000));
+
+  let status = "стабильный";
+  if(days >= 6) status = "пауза";
+  else if(days >= 3) status = "нестабильный";
+
+  el.textContent = `${status} · последняя: ${lastWhen} · 14д: ${count14}`;
+}
+
+function renderWorkouts(){
+  renderWorkoutCalendar();
+  renderDelavierPlanUI();
+
+  // mode
+  const ws = state.ui.workoutWeekStartISO;
+  const sel = $("#workoutModeSelect");
+  sel.value = getWorkoutMode(ws);
+  sel.onchange = () => { setWorkoutMode(ws, sel.value); };
+
+  renderWorkoutRhythm();
+
+  // timer
+  const active = state.workouts.find(w => w.kind === "session" && w.startedAt && !w.endedAt);
+  updateWorkoutTimerUI(active);
+
+  // counter
+  $("#workoutDoneCounter").textContent = `✓ ${doneCountForWorkoutView()}`;
+
+  const scope = workoutsInScope();
+
+  const planned = scope.filter(w => w.kind === "plan");
+  const inProgress = scope.filter(w => w.kind === "session" && w.startedAt && !w.endedAt);
+  const done = scope.filter(w => w.kind === "session" && w.endedAt);
+
+  const list = $("#workoutList");
+  let html = "";
+
+  const section = (title, items, kind) => {
+    if(items.length === 0) return "";
+    const rows = items.map(w => {
+      const cls = w.kind === "plan" ? "planned" : (w.startedAt && !w.endedAt ? "session" : "");
+      let meta = isoToLabel(w.dateISO);
+      if(w.kind === "plan") meta += " · план";
+      if(w.kind === "session" && !w.endedAt) meta += " · в процессе";
+      if(w.kind === "session" && w.endedAt){
+        const sec = Math.max(0, Math.floor((w.endedAt - (w.startedAt||w.endedAt))/1000));
+        const m = Math.floor(sec/60);
+        const s = sec%60;
+        const dur = m ? `${m}м ${s}с` : `${s}с`;
+        meta += ` · факт · ${dur}`;
+      }
+      return `
+        <div class="item ${cls}" data-id="${w.id}">
+          <div class="item-text">
+            ${formatWorkoutName(w.name)}
+            <div class="item-meta">${meta}</div>
+          </div>
+          <div class="item-actions">
+            ${w.kind === "session" && !w.endedAt ? `<button class="icon-btn done" data-action="finish" type="button" title="Завершить">✓</button>` : ``}
+            ${w.kind === "plan" ? `<button class="icon-btn done" data-action="startfromplan" type="button" title="Начать">▶</button>` : ``}
+            <button class="icon-btn del" data-action="del" type="button" title="Удалить">✕</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+    return `<div class="section-title">${title}</div>${rows}`;
+  };
+
+  html += section("План", planned, "plan");
+  html += section("Сессия", inProgress, "progress");
+  html += section("Факт", done, "done");
+
+  if(!html){
+    list.innerHTML = `<div class="item"><div class="item-text" style="color:rgba(255,255,255,.55)">Пока пусто. Сделай план или нажми «Начать».</div></div>`;
+  }else{
+    list.innerHTML = html;
+
+    // Mobile: компактный вид упражнений (раскрытие по тапу)
+    list.querySelectorAll(".item").forEach(it => {
+      if(it.querySelector(".wk-wrap")){
+        it.classList.add("has-wk");
+        if(window.matchMedia("(max-width: 520px)").matches){
+          it.classList.add("compact");
+        }
+      }
+    });
+
+    list.querySelectorAll(".wk-toggle").forEach(btn => {
+      btn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const item = e.target.closest(".item");
+        if(!item) return;
+        const expanded = item.classList.toggle("expanded");
+        item.classList.toggle("compact", !expanded);
+      };
+    });
+
+    // Тап по заголовку тоже раскрывает/сворачивает (на мобильном)
+    list.querySelectorAll(".wk-head").forEach(head => {
+      head.onclick = (e) => {
+        if(!window.matchMedia("(max-width: 520px)").matches) return;
+        // если тапнули именно на кнопки действий — не мешаем
+        if(e.target.closest(".wk-toggle")) return;
+        const item = e.target.closest(".item");
+        if(!item) return;
+        const expanded = item.classList.toggle("expanded");
+        item.classList.toggle("compact", !expanded);
+      };
+    });
+
+
+    list.querySelectorAll("[data-action='finish']").forEach(btn => {
+      btn.onclick = (e) => finishWorkoutSession(e.target.closest(".item").dataset.id);
+    });
+    list.querySelectorAll("[data-action='startfromplan']").forEach(btn => {
+      btn.onclick = (e) => {
+        // convert plan -> session start (keep name/date)
+        const id = e.target.closest(".item").dataset.id;
+        const w = state.workouts.find(x => x.id === id);
+        if(!w || w.kind !== "plan") return;
+        const already = state.workouts.find(x => x.kind === "session" && x.startedAt && !x.endedAt);
+        if(already) return;
+        w.kind = "session";
+        w.startedAt = Date.now();
+        w.endedAt = null;
+        save();
+        renderWorkouts();
+      };
+    });
+    list.querySelectorAll("[data-action='del']").forEach(btn => {
+      btn.onclick = (e) => {
+        const id = e.target.closest(".item").dataset.id;
+        state.workouts = state.workouts.filter(x => x.id !== id);
+        save();
+        renderWorkouts();
+      };
+    });
+  }
+
+  // archive (all done sessions in scope, not filtered by date if "Все" mode is on)
+  const arch = $("#workoutArchive");
+  const toggle = $("#toggleWorkoutArchiveBtn");
+  const show = !!state.ui.showWorkoutArchive;
+  arch.classList.toggle("show", show);
+  toggle.textContent = show ? "Скрыть завершённые" : "Показать завершённые";
+
+  if(show){
+    const {ws,we} = workoutScopeRange();
+    let items = state.workouts.filter(w => w.kind === "session" && w.endedAt && w.dateISO >= ws && w.dateISO <= we);
+    if(state.ui.workoutSelectedDate){
+      items = items.filter(w => w.dateISO === state.ui.workoutSelectedDate);
+    }
+    if(items.length === 0){
+      arch.innerHTML = `<div class="item"><div class="item-text" style="color:rgba(255,255,255,.55)">Завершённых нет.</div></div>`;
+    } else {
+      arch.innerHTML = items.map(w => `
+        <div class="item">
+          <div class="item-text">
+            ${formatWorkoutName(w.name)}
+            <div class="item-meta">${isoToLabel(w.dateISO)} · завершено</div>
+          </div>
+        </div>
+      `).join("");
+    }
+  }
+}
+
+/* ---------- Render all ---------- */
+function renderAll(){
+  renderTasks();
+  renderBudget();
+  renderWorkouts();
+}
+
+/* ---------- Import / Export / Reset ---------- */
+function exportJSON(){
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "tracker-export.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importJSON(file){
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const parsed = JSON.parse(String(reader.result || ""));
+      if(!parsed || typeof parsed !== "object") throw new Error("bad");
+      state.tab = parsed.tab || state.tab;
+      state.ui = parsed.ui && typeof parsed.ui === "object" ? { ...state.ui, ...parsed.ui } : state.ui;
+      state.tasks = Array.isArray(parsed.tasks) ? parsed.tasks : state.tasks;
+      state.tasksDone = Array.isArray(parsed.tasksDone) ? parsed.tasksDone : (Array.isArray(parsed.archive) ? parsed.archive : state.tasksDone);
+      state.txs = Array.isArray(parsed.txs) ? parsed.txs : state.txs;
+      state.workouts = Array.isArray(parsed.workouts) ? parsed.workouts : state.workouts;
+      state.workoutModeByWeek = parsed.workoutModeByWeek && typeof parsed.workoutModeByWeek === "object" ? parsed.workoutModeByWeek : state.workoutModeByWeek;
+      save();
+      load();
+      applyTheme();
+      initDefaults();
+      setTab(state.tab);
+      renderAll();
+      alert("Импорт готов ✅");
+    }catch{
+      alert("Не получилось импортировать JSON.");
+    }
+  };
+  reader.readAsText(file);
+}
+
+function resetAll(){
+  const ok = confirm("Сбросить всё? Это удалит данные в этом браузере.");
+  if(!ok) return;
+  localStorage.removeItem(STORE_KEY);
+  localStorage.removeItem(STORE_KEY + "_budget_limit");
+  location.reload();
+}
+
+/* ---------- Week navigation ---------- */
+function shiftWeek(kind, deltaWeeks){
+  const deltaDays = deltaWeeks * 7;
+  if(kind === "tasks"){
+    state.ui.taskWeekStartISO = addDaysISO(state.ui.taskWeekStartISO, deltaDays);
+    state.ui.taskSelectedDate = null;
+    save(); renderTasks();
+  } else if(kind === "budget"){
+    state.ui.budgetWeekStartISO = addDaysISO(state.ui.budgetWeekStartISO, deltaDays);
+    state.ui.budgetShowAll = true;
+    save(); renderBudget();
+  } else if(kind === "workouts"){
+    state.ui.workoutWeekStartISO = addDaysISO(state.ui.workoutWeekStartISO, deltaDays);
+    state.ui.workoutSelectedDate = null;
+    save(); renderWorkouts();
+  }
+}
+
+function goToday(kind){
+  const t0 = todayISO();
+  if(kind === "tasks"){
+    state.ui.taskWeekStartISO = startOfWeekISO(t0);
+    state.ui.taskSelectedDate = t0;
+    $("#taskDate").value = t0;
+    save(); renderTasks();
+  } else if(kind === "budget"){
+    state.ui.budgetWeekStartISO = startOfWeekISO(t0);
+    state.ui.budgetSelectedDate = t0;
+    state.ui.budgetShowAll = false;
+    $("#txDate").value = t0;
+    save(); renderBudget();
+  } else if(kind === "workouts"){
+    state.ui.workoutWeekStartISO = startOfWeekISO(t0);
+    state.ui.workoutSelectedDate = t0;
+    $("#workoutDate").value = t0;
+    save(); renderWorkouts();
+  }
+}
+
+/* ---------- Init defaults ---------- */
+function initDefaults(){
+  const t0 = todayISO();
+
+  if(!state.ui.taskWeekStartISO) state.ui.taskWeekStartISO = startOfWeekISO(state.ui.taskSelectedDate || t0);
+  if(!state.ui.workoutWeekStartISO) state.ui.workoutWeekStartISO = startOfWeekISO(state.ui.workoutSelectedDate || t0);
+  ensureBudgetUIState();
+
+  if(!state.ui.workoutSelectedDate) state.ui.workoutSelectedDate = t0;
+
+  $("#taskDate").value = state.ui.taskSelectedDate || t0;
+  $("#workoutDate").value = state.ui.workoutSelectedDate || t0;
+  $("#txDate").value = state.ui.budgetSelectedDate || t0;
+}
+
+/* ---------- Bind ---------- */
+function bind(){
+  // tabs
+  $$(".tabbtn").forEach(b => b.onclick = () => { setTab(b.dataset.go); });
+
+  // theme
+  $("#themeBtn").onclick = toggleTheme;
+
+  // tasks
+  $("#addTaskBtn").onclick = addTask;
+  $("#taskText").addEventListener("keydown", (e)=>{ if(e.key==="Enter") addTask(); });
+  $("#taskShowAllBtn").onclick = () => { state.ui.taskSelectedDate = null; save(); renderTasks(); };
+  $("#taskTodayBtn").onclick = () => goToday("tasks");
+  $("#taskPrevWeekBtn").onclick = () => shiftWeek("tasks", -1);
+  $("#taskNextWeekBtn").onclick = () => shiftWeek("tasks", +1);
+  $("#taskDate").addEventListener("change", () => {
+    const v = clampISO($("#taskDate").value || todayISO());
+    state.ui.taskSelectedDate = v;
+    state.ui.taskWeekStartISO = startOfWeekISO(v);
+    save(); renderTasks();
+  });
+  $("#toggleArchiveBtn").onclick = () => { state.ui.showArchive = !state.ui.showArchive; save(); renderTasks(); };
+
+  // budget
+  $("#addTxBtn").onclick = addTx;
+  $("#txAmount").addEventListener("keydown", (e)=>{ if(e.key==="Enter") addTx(); });
+  $("#budgetShowAllBtn").onclick = () => { state.ui.budgetShowAll = true; save(); renderBudget(); };
+  $("#budgetTodayBtn").onclick = () => goToday("budget");
+  $("#budgetPrevWeekBtn").onclick = () => shiftWeek("budget", -1);
+  $("#budgetNextWeekBtn").onclick = () => shiftWeek("budget", +1);
+  $("#txDate").addEventListener("change", () => {
+    const v = clampISO($("#txDate").value || todayISO());
+    state.ui.budgetSelectedDate = v;
+    state.ui.budgetWeekStartISO = startOfWeekISO(v);
+    state.ui.budgetShowAll = false;
+    save(); renderBudget();
+  });
+  $("#saveBudgetLimitBtn").onclick = () => {
+    const raw = String($("#budgetLimitInput").value || "").trim().replace(",", ".");
+    const n = Number(raw);
+    if(!Number.isFinite(n) || n < 0) return;
+    setBudgetLimit(n);
+    renderBudget();
+  };
+
+  // workouts
+  $("#addWorkoutBtn").onclick = addWorkoutPlan;
+  $("#startWorkoutBtn").onclick = startWorkoutSession;
+  $("#workoutName").addEventListener("keydown", (e)=>{ if(e.key==="Enter") startWorkoutSession(); });
+  $("#workoutShowAllBtn").onclick = () => { state.ui.workoutSelectedDate = null; save(); renderWorkouts(); };
+  $("#workoutTodayBtn").onclick = () => goToday("workouts");
+  $("#workoutPrevWeekBtn").onclick = () => shiftWeek("workouts", -1);
+  $("#workoutNextWeekBtn").onclick = () => shiftWeek("workouts", +1);
+  $("#workoutDate").addEventListener("change", () => {
+    const v = clampISO($("#workoutDate").value || todayISO());
+    state.ui.workoutSelectedDate = v;
+    state.ui.workoutWeekStartISO = startOfWeekISO(v);
+    save(); renderWorkouts();
+  });
+  $("#toggleWorkoutArchiveBtn").onclick = () => { state.ui.showWorkoutArchive = !state.ui.showWorkoutArchive; save(); renderWorkouts(); };
+
+  // delavier plan
+  const planSel = $("#delavierPlanSelect");
+  if(planSel){
+    planSel.onchange = () => {
+      state.ui.delavierPlanKey = planSel.value || "beginner3";
+      save();
+      renderDelavierPlanUI();
+    };
+  }
+  const addWeek = $("#delavierAddWeekBtn");
+  if(addWeek){
+    addWeek.onclick = () => {
+      delavierAddPlans(state.ui.workoutWeekStartISO, state.ui.delavierPlanKey, 1);
+      renderWorkouts();
+    };
+  }
+  const add4w = $("#delavierAdd4wBtn");
+  if(add4w){
+    add4w.onclick = () => {
+      delavierAddPlans(state.ui.workoutWeekStartISO, state.ui.delavierPlanKey, 4);
+      renderWorkouts();
+    };
+  }
+  const clearWeek = $("#delavierClearWeekBtn");
+  if(clearWeek){
+    clearWeek.onclick = () => {
+      const ok = confirm("Очистить планы Делавье в этой неделе?");
+      if(!ok) return;
+      delavierClearWeek(state.ui.workoutWeekStartISO);
+      renderWorkouts();
+    };
+  }
+
+  // import/export/reset
+  $("#exportBtn").onclick = exportJSON;
+  $("#importBtn").onclick = () => $("#importFile").click();
+  $("#importFile").addEventListener("change", (e) => {
+    const f = e.target.files && e.target.files[0];
+    if(f) importJSON(f);
+    e.target.value = "";
+  });
+  $("#resetBtn").onclick = resetAll;
+}
+
+/* ---------- Boot ---------- */
+load();
+applyTheme();
+initDefaults();
+bind();
+setTab(state.tab || "tasks");
+renderAll();
+
+</script>
+</body>
+</html>
